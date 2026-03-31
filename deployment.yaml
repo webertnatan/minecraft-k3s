@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minecraft
+  namespace: minecraft
+  labels:
+    app: minecraft
 spec:
   replicas: 1
   selector:
@@ -12,24 +15,65 @@ spec:
       labels:
         app: minecraft
     spec:
+
+      # 🔥 Corrige world corrompido automaticamente (REMOVER depois!)
+      initContainers:
+        - name: reset-world
+          image: busybox
+          command: ["sh", "-c", "rm -rf /data/world"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
       containers:
-      - name: minecraft
-        image: itzg/minecraft-server
-        ports:
-        - containerPort: 25565
-        env:
-        - name: EULA
-          value: "TRUE"
-        - name: ONLINE_MODE
-          value: "FALSE"  
-        - name: MEMORY
-          value: "2G"
-        - name: VERSION
-          value: "1.20.1"  
-        volumeMounts:
-        - name: data
-          mountPath: /data
+        - name: minecraft
+          image: itzg/minecraft-server:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 25565
+              name: minecraft
+
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: ONLINE_MODE
+              value: "FALSE"
+            - name: MEMORY
+              value: "2G"
+            - name: VERSION
+              value: "1.20.1"
+            - name: TYPE
+              value: "VANILLA"
+            - name: ENABLE_RCON
+              value: "true"
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+          # 🧠 Evita CrashLoop e melhora estabilidade
+          readinessProbe:
+            tcpSocket:
+              port: 25565
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          livenessProbe:
+            tcpSocket:
+              port: 25565
+            initialDelaySeconds: 60
+            periodSeconds: 20
+
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "2"
+
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: minecraft-pvc
+        - name: data
+          persistentVolumeClaim:
+            claimName: minecraft-pvc
