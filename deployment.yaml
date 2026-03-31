@@ -20,5 +20,14 @@ spec:
         env:
         - name: EULA
           value: "TRUE"
+        - name: ONLINE_MODE
+          value: "FALSE"  
         - name: MEMORY
           value: "2G"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: minecraft-pvc
