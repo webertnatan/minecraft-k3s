@@ -24,6 +24,8 @@ spec:
           value: "FALSE"  
         - name: MEMORY
           value: "2G"
+        - name: VERSION
+          value: "1.20.1"  
         volumeMounts:
         - name: data
           mountPath: /data
